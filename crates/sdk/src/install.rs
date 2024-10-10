@@ -17,7 +17,10 @@ pub const CIRCUIT_ARTIFACTS_URL_BASE: &str = "https://sp1-circuits.s3-us-east-2.
 
 /// The directory where the circuit artifacts will be stored.
 pub fn install_circuit_artifacts_dir() -> PathBuf {
-    dirs::home_dir().unwrap().join(".sp1").join("circuits").join(SP1_CIRCUIT_VERSION)
+    match std::env::var("SP1_PLONK_CIRCUITS_BIN") {
+        Ok(dir) => PathBuf::from(dir).join(SP1_CIRCUIT_VERSION),
+        _ => dirs::home_dir().unwrap().join(".sp1").join("circuits").join(SP1_CIRCUIT_VERSION),
+    }
 }
 
 /// Tries to install the circuit artifacts if they are not already installed.
