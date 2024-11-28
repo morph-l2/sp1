@@ -1,4 +1,3 @@
-use std::borrow::{Borrow, BorrowMut};
 use num::{BigUint, Zero};
 use p3_air::{Air, AirBuilder, BaseAir};
 use p3_field::{AbstractField, Field, PrimeField32};
@@ -12,6 +11,18 @@ use sp1_curves::{
     bn254::{Bn254ScalarField, BN254_SCALAR_FIELD_MODULUS},
     params::{FieldParameters, Limbs, NumLimbs},
 };
+use sp1_derive::AlignedBorrow;
+use sp1_stark::air::{InteractionScope, MachineAir, SP1AirBuilder};
+use std::borrow::{Borrow, BorrowMut};
+
+use crate::{
+    memory::{MemoryReadCols, MemoryWriteCols},
+    operations::field::field_op::FieldOpCols,
+    utils::{limbs_from_access, pad_rows_fixed},
+};
+
+const NUM_WORDS_PER_FE: usize = 8;
+const NUM_COLS: usize = core::mem::size_of::<Bn254ScalarMacCols<u8>>();
 
 #[derive(Debug, Clone, AlignedBorrow)]
 #[repr(C)]
@@ -20,18 +31,18 @@ pub struct Bn254ScalarMacCols<T> {
     shard: T,
     clk: T,
     nonce: T,
-    x_ptr: T,      // 存储结果和第一个加数
-    y_ptr: T,      // 存储两个乘数
-    
+    x_ptr: T, // 存储结果和第一个加数
+    y_ptr: T, // 存储两个乘数
+
     // 内存访问列
-    x_memory: [MemoryWriteCols<T>; NUM_WORDS_PER_FE],  // 结果
-    a_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],   // 第一个乘数
-    b_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],   // 第二个乘数
-    c_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],   // 加数
-    
+    x_memory: [MemoryWriteCols<T>; NUM_WORDS_PER_FE], // 结果
+    a_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],  // 第一个乘数
+    b_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],  // 第二个乘数
+    c_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],  // 加数
+
     // 运算列
-    mul_eval: FieldOpCols<T, Bn254ScalarField>,  // a * b
-    add_eval: FieldOpCols<T, Bn254ScalarField>,  // (a * b) + c
+    mul_eval: FieldOpCols<T, Bn254ScalarField>, // a * b
+    add_eval: FieldOpCols<T, Bn254ScalarField>, // (a * b) + c
 }
 
 pub struct Bn254ScalarMacChip;
@@ -60,21 +71,21 @@ impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
         let mut new_byte_lookup_events = vec![];
 
         // 处理MAC和MUL事件
-        for event in input.get_precompile_events(SyscallCode::BN254_SCALAR_MAC)
+        for event in input
+            .get_precompile_events(SyscallCode::BN254_SCALAR_MAC)
             .into_iter()
-            .chain(input.get_precompile_events(SyscallCode::BN254_SCALAR_MUL)) {
-            
+            .chain(input.get_precompile_events(SyscallCode::BN254_SCALAR_MUL))
+        {
             let (a, b, c) = match event {
-                (_, PrecompileEvent::Bn254ScalarMac(event)) => {
-                    (event.a.value_as_biguint(),
-                     event.b.value_as_biguint(),
-                     event.c.value_as_biguint())
-                },
+                (_, PrecompileEvent::Bn254ScalarMac(event)) => (
+                    event.a.value_as_biguint(),
+                    event.b.value_as_biguint(),
+                    event.c.value_as_biguint(),
+                ),
                 (_, PrecompileEvent::Bn254ScalarMul(event)) => {
-                    (event.a.value_as_biguint(),
-                     event.b.value_as_biguint(),
-                     BigUint::zero())  // 乘法视为加0的MAC
-                },
+                    (event.a.value_as_biguint(), event.b.value_as_biguint(), BigUint::zero())
+                    // 乘法视为加0的MAC
+                }
                 _ => unreachable!(),
             };
 
@@ -125,21 +136,19 @@ impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
             || {
                 let mut row = [F::zero(); NUM_COLS];
                 let cols: &mut Bn254ScalarMacCols<F> = row.as_mut_slice().borrow_mut();
-                
+
                 let zero = BigUint::zero();
                 cols.mul_eval.populate(&mut vec![], 0, &zero, &zero, FieldOperation::Mul);
                 cols.add_eval.populate(&mut vec![], 0, &zero, &zero, FieldOperation::Add);
-                
+
                 row
             },
             input.fixed_log2_rows::<F, _>(self),
         );
 
         // 生成矩阵并设置nonce
-        let mut trace = RowMajorMatrix::new(
-            rows.into_iter().flatten().collect::<Vec<_>>(),
-            NUM_COLS,
-        );
+        let mut trace =
+            RowMajorMatrix::new(rows.into_iter().flatten().collect::<Vec<_>>(), NUM_COLS);
 
         for i in 0..trace.height() {
             let cols: &mut Bn254ScalarMacCols<F> =
@@ -151,8 +160,8 @@ impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
     }
 
     fn included(&self, shard: &Self::Record) -> bool {
-        !shard.get_precompile_events(SyscallCode::BN254_SCALAR_MAC).is_empty() ||
-        !shard.get_precompile_events(SyscallCode::BN254_SCALAR_MUL).is_empty()
+        !shard.get_precompile_events(SyscallCode::BN254_SCALAR_MAC).is_empty()
+            || !shard.get_precompile_events(SyscallCode::BN254_SCALAR_MUL).is_empty()
     }
 }
 
@@ -175,10 +184,7 @@ where
 
         // nonce约束
         builder.when_first_row().assert_zero(local.nonce);
-        builder.when_transition().assert_eq(
-            local.nonce + AB::Expr::one(),
-            next.nonce,
-        );
+        builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         builder.assert_bool(local.is_real);
 
@@ -186,15 +192,9 @@ where
         let a = limbs_from_access(&local.a_memory);
         let b = limbs_from_access(&local.b_memory);
         let c = limbs_from_access(&local.c_memory);
-        
+
         // 验证乘法运算
-        local.mul_eval.eval(
-            builder,
-            &a,
-            &b,
-            FieldOperation::Mul,
-            local.is_real,
-        );
+        local.mul_eval.eval(builder, &a, &b, FieldOperation::Mul, local.is_real);
 
         // 验证加法运算
         local.add_eval.eval(
@@ -209,10 +209,7 @@ where
         for i in 0..Bn254ScalarField::NB_LIMBS {
             builder
                 .when(local.is_real)
-                .assert_eq(
-                    local.add_eval.result[i],
-                    local.x_memory[i / 4].value()[i % 4],
-                );
+                .assert_eq(local.add_eval.result[i], local.x_memory[i / 4].value()[i % 4]);
         }
 
         // 内存访问验证
