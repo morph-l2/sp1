@@ -140,6 +140,9 @@ pub enum SyscallCode {
 
     /// Executes the `SECP256R1_DECOMPRESS` precompile.
     SECP256R1_DECOMPRESS = 0x00_00_01_2E,
+
+    /// Execute the `BN254_SCALAR_MULADD` precompile.
+    BN254_SCALAR_MULADD = 0x00_01_01_31,
 }
 
 impl SyscallCode {
@@ -186,6 +189,7 @@ impl SyscallCode {
             0x00_01_01_2C => SyscallCode::SECP256R1_ADD,
             0x00_00_01_2D => SyscallCode::SECP256R1_DOUBLE,
             0x00_00_01_2E => SyscallCode::SECP256R1_DECOMPRESS,
+            0x00_01_01_31 => SyscallCode::BN254_SCALAR_MULADD,
             _ => panic!("invalid syscall number: {value}"),
         }
     }

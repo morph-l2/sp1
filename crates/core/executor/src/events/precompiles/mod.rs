@@ -1,3 +1,4 @@
+mod bn254_scalar;
 mod ec;
 mod edwards;
 mod fptower;
@@ -8,6 +9,9 @@ mod u256x2048_mul;
 mod uint256;
 
 use crate::syscalls::SyscallCode;
+pub use bn254_scalar::{
+    create_bn254_scalar_arith_event, Bn254FieldArithEvent, Bn254FieldOperation, NUM_WORDS_PER_FE,
+};
 pub use ec::*;
 pub use edwards::*;
 pub use fptower::*;
@@ -75,6 +79,8 @@ pub enum PrecompileEvent {
     Uint256Mul(Uint256MulEvent),
     /// U256XU2048 mul precompile event.
     U256xU2048Mul(U256xU2048MulEvent),
+    /// Bn254Scalar mul_add precompile event.
+    Bn254ScalarMulAdd(Bn254FieldArithEvent),
 }
 
 /// Trait to retrieve all the local memory events from a vec of precompile events.
@@ -133,6 +139,9 @@ impl PrecompileLocalMemory for Vec<(SyscallEvent, PrecompileEvent)> {
                     iterators.push(e.local_mem_access.iter());
                 }
                 PrecompileEvent::Bls12381Fp2Mul(e) | PrecompileEvent::Bn254Fp2Mul(e) => {
+                    iterators.push(e.local_mem_access.iter());
+                }
+                PrecompileEvent::Bn254ScalarMulAdd(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
             }
