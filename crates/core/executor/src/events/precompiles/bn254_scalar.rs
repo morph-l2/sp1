@@ -34,15 +34,24 @@ impl Bn254FieldOperation {
     }
 }
 
+/// Bn254 scalar Event.
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Bn254FieldArithEvent {
+    /// The lookup identifier.
     pub lookup_id: LookupId,
+    /// The shard number.
     pub shard: u32,
+    /// The clock cycle.
     pub clk: u32,
+    /// The field operation.
     pub op: Bn254FieldOperation,
+    /// The pointer to the x value and the x memory.
     pub arg1: FieldArithMemoryAccess<MemoryWriteRecord>,
+    /// The pointer to the y value and the y memory.
     pub arg2: FieldArithMemoryAccess<MemoryReadRecord>,
+    /// The pointer to the a value and the a memory.
     pub a: Option<FieldArithMemoryAccess<MemoryReadRecord>>,
+    /// The pointer to the b value and the b memory.
     pub b: Option<FieldArithMemoryAccess<MemoryReadRecord>>,
     /// The local memory access records.
     pub local_mem_access: Vec<MemoryLocalEvent>,

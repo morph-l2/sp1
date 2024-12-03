@@ -38,8 +38,10 @@ pub struct Bn254ScalarMulAddCols<T> {
     x_ptr: T,
     y_ptr: T,
 
+    //x_ptr
     x_memory: [MemoryWriteCols<T>; NUM_WORDS_PER_FE],
 
+    //y_ptr
     a_ptr_memory: MemoryReadCols<T>,
     b_ptr_memory: MemoryReadCols<T>,
 
@@ -47,7 +49,7 @@ pub struct Bn254ScalarMulAddCols<T> {
     b_memory: [MemoryReadCols<T>; NUM_WORDS_PER_FE],
 
     a_mul_b: FieldOpCols<T, Bn254ScalarField>,
-    add_eval: FieldOpCols<T, Bn254ScalarField>, // (a * b) + c
+    add_eval: FieldOpCols<T, Bn254ScalarField>, // x + (a * b)
 }
 
 pub struct Bn254ScalarMulAddChip;
