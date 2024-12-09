@@ -109,6 +109,15 @@ extern "C" {
         modulus: *const [u32; 8],
     );
 
+    /// Computes big integer operation.
+    pub fn sys_bn254_muladd(
+        result: *mut [u32; 8],
+        op: u32,
+        x: *const [u32; 8],
+        y: *const [u32; 8],
+        z: *const [u32; 8],
+    );
+
     /// Executes a BLS12-381 field addition on the given inputs.
     pub fn syscall_bls12381_fp_addmod(p: *mut u32, q: *const u32);
 

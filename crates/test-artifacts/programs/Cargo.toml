@@ -38,6 +38,7 @@ members = [
   "u256x2048-mul",
   "uint256-arith",
   "uint256-mul",
+  "uint256-muladd",
   "verify-proof",
   "u256x2048-mul",
 ]

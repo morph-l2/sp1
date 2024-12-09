@@ -154,6 +154,9 @@ pub enum SyscallCode {
 
     /// Executes the `BN254_FP2_MUL` precompile.
     BN254_FP2_MUL = 0x00_01_01_2B,
+
+    /// Execute the `BN254_SCALAR_MULADD` precompile base on uint256.
+    BN254_MULADD = 0x00_01_01_1F,
 }
 
 impl SyscallCode {
@@ -199,6 +202,7 @@ impl SyscallCode {
             0x00_01_01_2A => SyscallCode::BN254_FP2_SUB,
             0x00_01_01_2B => SyscallCode::BN254_FP2_MUL,
             0x00_00_01_1C => SyscallCode::BLS12381_DECOMPRESS,
+            0x00_01_01_1F => SyscallCode::BN254_MULADD,
             _ => panic!("invalid syscall number: {}", value),
         }
     }
@@ -448,6 +452,7 @@ pub fn default_syscall_map() -> HashMap<SyscallCode, Arc<dyn Syscall>> {
         Arc::new(WeierstrassDecompressChip::<Bls12381>::with_lexicographic_rule()),
     );
     syscall_map.insert(SyscallCode::UINT256_MUL, Arc::new(Uint256MulChip::new()));
+    syscall_map.insert(SyscallCode::BN254_MULADD, Arc::new(Bn254MulAddChip::new()));
 
     syscall_map
 }
@@ -534,6 +539,9 @@ mod tests {
                 }
                 SyscallCode::UINT256_MUL => {
                     assert_eq!(code as u32, sp1_zkvm::syscalls::UINT256_MUL)
+                }
+                SyscallCode::BN254_MULADD => {
+                    assert_eq!(code as u32, sp1_zkvm::syscalls::BN254_MULADD)
                 }
                 SyscallCode::U256X2048_MUL => {
                     assert_eq!(code as u32, sp1_zkvm::syscalls::U256X2048_MUL)
