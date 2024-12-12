@@ -41,6 +41,7 @@ members = [
   "uint256-muladd",
   "verify-proof",
   "u256x2048-mul",
+  "memcpy",
 ]
 resolver = "2"
 

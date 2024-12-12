@@ -26,7 +26,7 @@ use strum::{EnumIter, IntoEnumIterator};
 pub use u256x2048_mul::*;
 pub use uint256::*;
 
-use super::{MemoryLocalEvent, SyscallEvent};
+use super::{MemCopyEvent, MemoryLocalEvent, SyscallEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize, EnumIter)]
 /// Precompile event.  There should be one variant for every precompile syscall.
@@ -65,6 +65,8 @@ pub enum PrecompileEvent {
     Bn254Fp2AddSub(Fp2AddSubEvent),
     /// Bn254 quadratic field mul precompile event.
     Bn254Fp2Mul(Fp2MulEvent),
+    MemCopy32(MemCopyEvent),
+    MemCopy64(MemCopyEvent),
     /// Bls12-381 curve add precompile event.
     Bls12381Add(EllipticCurveAddEvent),
     /// Bls12-381 curve double precompile event.
@@ -149,6 +151,9 @@ impl PrecompileLocalMemory for Vec<(SyscallEvent, PrecompileEvent)> {
                     iterators.push(e.local_mem_access.iter());
                 }
                 PrecompileEvent::Bn254MulAdd(e) => {
+                    iterators.push(e.local_mem_access.iter());
+                }
+                PrecompileEvent::MemCopy32(e) | PrecompileEvent::MemCopy64(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
             }

@@ -144,6 +144,14 @@ impl CostEstimator for ExecutionReport {
         total_area += (bn254_fp2_mul_events as u64) * costs[&RiscvAirDiscriminants::Bn254Fp2Mul];
         total_chips += 1;
 
+        let mem_copy_32_events = self.syscall_counts[SyscallCode::MEMCPY_32];
+        total_area += (mem_copy_32_events as u64) * costs[&RiscvAirDiscriminants::MemCopy32];
+        total_chips += 1;
+
+        let mem_copy_64_events = self.syscall_counts[SyscallCode::MEMCPY_64];
+        total_area += (mem_copy_64_events as u64) * costs[&RiscvAirDiscriminants::MemCopy64];
+        total_chips += 1;
+
         let bls12381_decompress_events = self.syscall_counts[SyscallCode::BLS12381_DECOMPRESS];
         total_area +=
             (bls12381_decompress_events as u64) * costs[&RiscvAirDiscriminants::Bls12381Decompress];

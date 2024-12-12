@@ -79,3 +79,5 @@ pub const TENDERMINT_BENCHMARK_ELF: &[u8] = include_elf!("tendermint-benchmark-p
 pub const U256XU2048_MUL_ELF: &[u8] = include_elf!("u256x2048-mul");
 
 pub const UINT256_MULADD_ELF: &[u8] = include_elf!("biguint-muladd-test");
+
+pub const MEMCPY_ELF: &[u8] = include_elf!("memcpy-test");
