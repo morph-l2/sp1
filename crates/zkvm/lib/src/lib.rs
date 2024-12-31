@@ -158,5 +158,5 @@ extern "C" {
     pub fn syscall_memcopy32(s: *const [u32; 8], d: *mut [u32; 8]);
 
     /// Executes a MEMCOPY64 on the given inputs.
-    pub fn syscall_memcopy64(s: *const [u32; 8], d: *mut [u32; 8]);
+    pub fn syscall_memcopy64(s: *const [u32; 16], d: *mut [u32; 16]);
 }

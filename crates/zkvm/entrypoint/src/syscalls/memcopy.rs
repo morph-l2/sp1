@@ -36,7 +36,7 @@ pub extern "C" fn syscall_memcopy32(src: *const [u32; 8], dst: *mut [u32; 8]) {
 /// byte boundary.
 #[allow(unused_variables)]
 #[no_mangle]
-pub extern "C" fn syscall_memcopy64(src: *const [u32; 8], dst: *mut [u32; 8]) {
+pub extern "C" fn syscall_memcopy64(src: *const [u32; 16], dst: *mut [u32; 16]) {
     #[cfg(target_os = "zkvm")]
     unsafe {
         asm!(
