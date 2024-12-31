@@ -6,7 +6,7 @@ use sp1_core_executor::syscalls::{Syscall, SyscallCode, SyscallContext};
 use sp1_core_executor::{ExecutionRecord, Program};
 use sp1_curves::params::Limbs;
 use sp1_stark::air::InteractionScope;
-use sp1_stark::air::{MachineAir, SP1AirBuilder};
+use sp1_stark::air::{BaseAirBuilder, MachineAir, SP1AirBuilder};
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 
@@ -17,6 +17,7 @@ use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use sp1_derive::AlignedBorrow;
 
 use crate::air::MemoryAirBuilder;
+use crate::memory::value_as_limbs;
 use crate::memory::{MemoryReadCols, MemoryWriteCols};
 use crate::utils::pad_rows_fixed;
 use crate::utils::{limbs_from_access, limbs_from_prev_access};
@@ -176,7 +177,9 @@ impl<AB: SP1AirBuilder, NumWords: ArrayLength + Sync, NumBytes: ArrayLength + Sy
             limbs_from_prev_access(&local.src_access);
         let dst: Limbs<<AB as AirBuilder>::Var, NumBytes> = limbs_from_access(&local.dst_access);
 
-        // TODO assert eq
+        builder
+            .when(local.is_real)
+            .assert_all_eq(value_as_limbs(&local.src_access), value_as_limbs(&local.dst_access));
 
         builder.eval_memory_access_slice(
             local.shard,
