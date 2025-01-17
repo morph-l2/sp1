@@ -33,7 +33,7 @@ use crate::{
 };
 
 const NUM_COLS: usize = core::mem::size_of::<Bn254ScalarMacCols<u8>>();
-const OP: Bn254FieldOperation = Bn254FieldOperation::Mac;
+const OP: Bn254FieldOperation = Bn254FieldOperation::MulAdd;
 
 #[derive(Debug, Clone, AlignedBorrow)]
 #[repr(C)]

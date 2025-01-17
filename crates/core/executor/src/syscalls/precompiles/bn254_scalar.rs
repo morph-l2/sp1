@@ -3,9 +3,9 @@ use crate::{
     syscalls::{Syscall, SyscallCode, SyscallContext},
 };
 
-pub(crate) struct Bn254ScalarMulAddSyscall;
+pub(crate) struct Bn254ScalarMacSyscall;
 
-impl Syscall for Bn254ScalarMulAddSyscall {
+impl Syscall for Bn254ScalarMacSyscall {
     fn execute(
         &self,
         rt: &mut SyscallContext,
@@ -21,7 +21,7 @@ impl Syscall for Bn254ScalarMulAddSyscall {
         rt.record_mut().add_precompile_event(
             syscall_code,
             syscall_event,
-            PrecompileEvent::Bn254ScalarMulAdd(event),
+            PrecompileEvent::Bn254ScalarMac(event),
         );
 
         None

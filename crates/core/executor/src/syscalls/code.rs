@@ -144,6 +144,9 @@ pub enum SyscallCode {
     /// Execute the `BN254_SCALAR_MULADD` precompile.
     BN254_SCALAR_MULADD = 0x00_01_01_31,
 
+    ///
+    BN254_SCALAR_MAC = 0x00_01_01_81,
+
     /// Execute the `BN254_SCALAR_MULADD` precompile base on uint256.
     BN254_MULADD = 0x00_01_01_1F,
 

@@ -84,7 +84,7 @@ pub enum PrecompileEvent {
     /// U256XU2048 mul precompile event.
     U256xU2048Mul(U256xU2048MulEvent),
     /// Bn254Scalar mul_add precompile event.
-    Bn254ScalarMulAdd(Bn254FieldArithEvent),
+    Bn254ScalarMac(Bn254FieldArithEvent),
     /// Bn254Scalar mul_add precompile event base on uint256 mul.
     Bn254MulAdd(Bn254MulAddEvent),
 }
@@ -147,7 +147,7 @@ impl PrecompileLocalMemory for Vec<(SyscallEvent, PrecompileEvent)> {
                 PrecompileEvent::Bls12381Fp2Mul(e) | PrecompileEvent::Bn254Fp2Mul(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
-                PrecompileEvent::Bn254ScalarMulAdd(e) => {
+                PrecompileEvent::Bn254ScalarMac(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
                 PrecompileEvent::Bn254MulAdd(e) => {
