@@ -7,6 +7,7 @@ use strum_macros::EnumIter;
 
 use crate::operations::field::field_op::FieldOperation;
 use crate::runtime::{Register, Runtime};
+use crate::syscall::precompiles::bn254_scalar::{Bn254ScalarMacChip};
 use crate::syscall::precompiles::edwards::EdAddAssignChip;
 use crate::syscall::precompiles::edwards::EdDecompressChip;
 use crate::syscall::precompiles::fptower::{Fp2AddSubSyscall, Fp2MulAssignChip, FpOpSyscall};
@@ -157,11 +158,15 @@ pub enum SyscallCode {
 
     /// Execute the `BN254_SCALAR_MULADD` precompile base on uint256.
     BN254_MULADD = 0x00_01_01_1F,
-
+    
     /// Execute the `MEMCPY_32` precompile.
     MEMCPY_32 = 0x00_01_01_90,
     /// Execute the `MEMCPY_64` precompile.
     MEMCPY_64 = 0x00_01_01_91,
+
+    /// Execute the `BN254_SCALAR_MAC` precompile.
+    BN254_SCALAR_MAC = 0x00_01_01_81,
+
 }
 
 impl SyscallCode {
@@ -210,6 +215,7 @@ impl SyscallCode {
             0x00_01_01_1F => SyscallCode::BN254_MULADD,
             0x00_01_01_90 => SyscallCode::MEMCPY_32,
             0x00_01_01_91 => SyscallCode::MEMCPY_64,
+            0x00_01_01_81 => SyscallCode::BN254_SCALAR_MAC,
             _ => panic!("invalid syscall number: {}", value),
         }
     }
@@ -460,6 +466,7 @@ pub fn default_syscall_map() -> HashMap<SyscallCode, Arc<dyn Syscall>> {
     );
     syscall_map.insert(SyscallCode::UINT256_MUL, Arc::new(Uint256MulChip::new()));
     syscall_map.insert(SyscallCode::BN254_MULADD, Arc::new(Bn254MulAddChip::new()));
+    syscall_map.insert(SyscallCode::BN254_SCALAR_MAC, Arc::new(Bn254ScalarMacChip::new()));
     syscall_map.insert(SyscallCode::MEMCPY_32, Arc::new(MemCopyChip::<U8, U32>::new()));
     syscall_map.insert(SyscallCode::MEMCPY_64, Arc::new(MemCopyChip::<U16, U64>::new()));
     syscall_map
@@ -604,6 +611,9 @@ mod tests {
                 }
                 SyscallCode::BN254_MULADD => {
                     assert_eq!(code as u32, sp1_zkvm::syscalls::BN254_MULADD)
+                }
+                SyscallCode::BN254_SCALAR_MAC => {
+                    assert_eq!(code as u32, sp1_zkvm::syscalls::BN254_SCALAR_MAC)
                 }
                 SyscallCode::MEMCPY_32 => {
                     assert_eq!(code as u32, sp1_zkvm::syscalls::MEMCPY_32)

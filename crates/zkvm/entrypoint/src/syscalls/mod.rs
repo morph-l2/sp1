@@ -168,3 +168,5 @@ pub const MEMCPY_32: u32 = 0x00_01_01_90;
 
 /// Executes the `MEMCPY_64` precompile
 pub const MEMCPY_64: u32 = 0x00_01_01_91;
+
+pub const BN254_SCALAR_MAC: u32 = 0x00_01_01_81;

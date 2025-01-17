@@ -15,7 +15,10 @@ use crate::{
     riscv::MemoryChipType::{Finalize, Initialize},
     syscall::{
         memcpy::{self, MemCopy32Chip, MemCopy64Chip},
-        precompiles::fptower::{Fp2AddSubAssignChip, Fp2MulAssignChip, FpOpChip},
+        precompiles::{
+            bn254_scalar::{self, Bn254ScalarMacChip},
+            fptower::{Fp2AddSubAssignChip, Fp2MulAssignChip, FpOpChip},
+        },
     },
 };
 use hashbrown::{HashMap, HashSet};
@@ -155,6 +158,7 @@ pub enum RiscvAir<F: PrimeField32> {
     Bn254Fp2Mul(Fp2MulAssignChip<Bn254BaseField>),
     /// A precompile for BN-254 fp2 addition/subtraction.
     Bn254Fp2AddSub(Fp2AddSubAssignChip<Bn254BaseField>),
+    Bn254ScalarMac(bn254_scalar::Bn254ScalarMacChip),
     MemCopy32(memcpy::MemCopy32Chip),
     MemCopy64(memcpy::MemCopy64Chip),
 }
@@ -285,6 +289,10 @@ impl<F: PrimeField32> RiscvAir<F> {
         let uint256_mul = Chip::new(RiscvAir::Uint256Mul(Uint256MulChip::default()));
         costs.insert(RiscvAirDiscriminants::Uint256Mul, uint256_mul.cost());
         chips.push(uint256_mul);
+
+        let bn254_scalar_mac = Chip::new(RiscvAir::Bn254ScalarMac(Bn254ScalarMacChip::new()));
+        costs.insert(RiscvAirDiscriminants::Bn254ScalarMac, bn254_scalar_mac.cost());
+        chips.push(bn254_scalar_mac);
 
         let bn254_muladd = Chip::new(RiscvAir::Bn254MulAdd(Bn254MulAddChip::default()));
         costs.insert(RiscvAirDiscriminants::Uint256Mul, bn254_muladd.cost());
@@ -512,6 +520,7 @@ impl<F: PrimeField32> RiscvAir<F> {
 
     pub(crate) fn syscall_code(&self) -> SyscallCode {
         match self {
+            Self::Bn254ScalarMac(_) => SyscallCode::BN254_SCALAR_MAC,
             Self::MemCopy32(_) => SyscallCode::MEMCPY_32,
             Self::MemCopy64(_) => SyscallCode::MEMCPY_64,
             Self::Bls12381Add(_) => SyscallCode::BLS12381_ADD,
