@@ -144,7 +144,7 @@ pub enum SyscallCode {
     /// Execute the `BN254_SCALAR_MULADD` precompile.
     BN254_SCALAR_MULADD = 0x00_01_01_31,
 
-    ///
+    /// Execute the `BN254_SCALAR_MAC` precompile
     BN254_SCALAR_MAC = 0x00_01_01_81,
 
     /// Execute the `BN254_SCALAR_MULADD` precompile base on uint256.
@@ -202,6 +202,7 @@ impl SyscallCode {
             0x00_00_01_2E => SyscallCode::SECP256R1_DECOMPRESS,
             0x00_01_01_31 => SyscallCode::BN254_SCALAR_MULADD,
             0x00_01_01_1F => SyscallCode::BN254_MULADD,
+            0x00_01_01_81 => SyscallCode::BN254_SCALAR_MAC,
             0x00_01_01_90 => SyscallCode::MEMCPY_32,
             0x00_01_01_91 => SyscallCode::MEMCPY_64,
             _ => panic!("invalid syscall number: {value}"),
