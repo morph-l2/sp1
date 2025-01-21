@@ -295,7 +295,7 @@ impl<F: PrimeField32> RiscvAir<F> {
         chips.push(bn254_scalar_mac);
 
         let bn254_muladd = Chip::new(RiscvAir::Bn254MulAdd(Bn254MulAddChip::default()));
-        costs.insert(RiscvAirDiscriminants::Uint256Mul, bn254_muladd.cost());
+        costs.insert(RiscvAirDiscriminants::Bn254MulAdd, bn254_muladd.cost());
         chips.push(bn254_muladd);
 
         let u256x2048_mul = Chip::new(RiscvAir::U256x2048Mul(U256x2048MulChip::default()));
