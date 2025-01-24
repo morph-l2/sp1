@@ -49,12 +49,12 @@ pub struct WeierstrassDecompressCols<T, P: FieldParameters + NumWords> {
     pub is_real: T,
     pub shard: T,
     pub clk: T,
-    pub nonce: T,
     pub ptr: T,
     pub sign_bit: T,
     pub x_access: GenericArray<MemoryReadCols<T>, P::WordsFieldElement>,
     pub y_access: GenericArray<MemoryReadWriteCols<T>, P::WordsFieldElement>,
     pub(crate) range_x: FieldLtCols<T, P>,
+    pub(crate) neg_y_range_check: FieldLtCols<T, P>,
     pub(crate) x_2: FieldOpCols<T, P>,
     pub(crate) x_3: FieldOpCols<T, P>,
     pub(crate) ax_plus_b: FieldInnerProductCols<T, P>,
@@ -69,7 +69,6 @@ pub struct WeierstrassDecompressCols<T, P: FieldParameters + NumWords> {
 #[repr(C)]
 pub struct LexicographicChoiceCols<T, P: FieldParameters + NumWords> {
     pub comparison_lt_cols: FieldLtCols<T, P>,
-    pub neg_y_range_check: FieldLtCols<T, P>,
     pub is_y_eq_sqrt_y_result: T,
     pub when_sqrt_y_res_is_lt: T,
     pub when_neg_y_res_is_lt: T,
@@ -110,21 +109,20 @@ impl<E: EllipticCurve + WeierstrassParameters> WeierstrassDecompressChip<E> {
 
     fn populate_field_ops<F: PrimeField32>(
         record: &mut impl ByteRecord,
-        shard: u32,
         cols: &mut WeierstrassDecompressCols<F, E::BaseField>,
         x: BigUint,
     ) {
         // Y = sqrt(x^3 + ax + b)
-        cols.range_x.populate(record, shard, &x, &E::BaseField::modulus());
-        let x_2 = cols.x_2.populate(record, shard, &x.clone(), &x.clone(), FieldOperation::Mul);
-        let x_3 = cols.x_3.populate(record, shard, &x_2, &x, FieldOperation::Mul);
+        cols.range_x.populate(record, &x, &E::BaseField::modulus());
+        let x_2 = cols.x_2.populate(record, &x.clone(), &x.clone(), FieldOperation::Mul);
+        let x_3 = cols.x_3.populate(record, &x_2, &x, FieldOperation::Mul);
         let b = E::b_int();
         let a = E::a_int();
         let param_vec = vec![a, b];
         let x_vec = vec![x, BigUint::one()];
-        let ax_plus_b = cols.ax_plus_b.populate(record, shard, &param_vec, &x_vec);
+        let ax_plus_b = cols.ax_plus_b.populate(record, &param_vec, &x_vec);
         let x_3_plus_b_plus_ax =
-            cols.x_3_plus_b_plus_ax.populate(record, shard, &x_3, &ax_plus_b, FieldOperation::Add);
+            cols.x_3_plus_b_plus_ax.populate(record, &x_3, &ax_plus_b, FieldOperation::Add);
 
         let sqrt_fn = match E::CURVE_TYPE {
             CurveType::Secp256k1 => secp256k1_sqrt,
@@ -133,9 +131,10 @@ impl<E: EllipticCurve + WeierstrassParameters> WeierstrassDecompressChip<E> {
             _ => panic!("Unsupported curve"),
         };
 
-        let y = cols.y.populate(record, shard, &x_3_plus_b_plus_ax, sqrt_fn);
+        let y = cols.y.populate(record, &x_3_plus_b_plus_ax, sqrt_fn);
         let zero = BigUint::zero();
-        cols.neg_y.populate(record, shard, &zero, &y, FieldOperation::Sub);
+        let neg_y = cols.neg_y.populate(record, &zero, &y, FieldOperation::Sub);
+        cols.neg_y_range_check.populate(record, &neg_y, &E::BaseField::modulus());
     }
 }
 
@@ -193,7 +192,7 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
             cols.sign_bit = F::from_bool(event.sign_bit);
 
             let x = BigUint::from_bytes_le(&event.x_bytes);
-            Self::populate_field_ops(&mut new_byte_lookup_events, event.shard, cols, x);
+            Self::populate_field_ops(&mut new_byte_lookup_events, cols, x);
 
             for i in 0..cols.x_access.len() {
                 cols.x_access[i].populate(event.x_memory_records[i], &mut new_byte_lookup_events);
@@ -215,28 +214,12 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
                     F::from_canonical_u8(event.decompressed_y_bytes[0] % 2) == lsb;
                 choice_cols.is_y_eq_sqrt_y_result = F::from_bool(is_y_eq_sqrt_y_result);
 
-                if is_y_eq_sqrt_y_result {
-                    choice_cols.neg_y_range_check.populate(
-                        &mut new_byte_lookup_events,
-                        event.shard,
-                        &neg_y,
-                        &modulus,
-                    );
-                } else {
-                    choice_cols.neg_y_range_check.populate(
-                        &mut new_byte_lookup_events,
-                        event.shard,
-                        &decompressed_y,
-                        &modulus,
-                    );
-                }
                 if event.sign_bit {
                     assert!(neg_y < decompressed_y);
                     choice_cols.when_sqrt_y_res_is_lt = F::from_bool(!is_y_eq_sqrt_y_result);
                     choice_cols.when_neg_y_res_is_lt = F::from_bool(is_y_eq_sqrt_y_result);
                     choice_cols.comparison_lt_cols.populate(
                         &mut new_byte_lookup_events,
-                        event.shard,
                         &neg_y,
                         &decompressed_y,
                     );
@@ -246,7 +229,6 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
                     choice_cols.when_neg_y_res_is_lt = F::from_bool(!is_y_eq_sqrt_y_result);
                     choice_cols.comparison_lt_cols.populate(
                         &mut new_byte_lookup_events,
-                        event.shard,
                         &decompressed_y,
                         &neg_y,
                     );
@@ -272,22 +254,13 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
                     cols.x_access[i].access.value = words[i].into();
                 }
 
-                Self::populate_field_ops(&mut vec![], 0, cols, dummy_value);
+                Self::populate_field_ops(&mut vec![], cols, dummy_value);
                 row
             },
             input.fixed_log2_rows::<F, _>(self),
         );
 
-        let mut trace = RowMajorMatrix::new(rows.into_iter().flatten().collect::<Vec<_>>(), width);
-
-        // Write the nonces to the trace.
-        for i in 0..trace.height() {
-            let cols: &mut WeierstrassDecompressCols<F, E::BaseField> =
-                trace.values[i * width..i * width + weierstrass_width].borrow_mut();
-            cols.nonce = F::from_canonical_usize(i);
-        }
-
-        trace
+        RowMajorMatrix::new(rows.into_iter().flatten().collect::<Vec<_>>(), width)
     }
 
     fn included(&self, shard: &Self::Record) -> bool {
@@ -307,6 +280,10 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
                 _ => panic!("Unsupported curve"),
             }
         }
+    }
+
+    fn local_only(&self) -> bool {
+        true
     }
 }
 
@@ -334,13 +311,6 @@ where
         let local_slice = main.row_slice(0);
         let local: &WeierstrassDecompressCols<AB::Var, E::BaseField> =
             (*local_slice)[0..weierstrass_cols].borrow();
-        let next = main.row_slice(1);
-        let next: &WeierstrassDecompressCols<AB::Var, E::BaseField> =
-            (*next)[0..weierstrass_cols].borrow();
-
-        // Constrain the incrementing nonce.
-        builder.when_first_row().assert_zero(local.nonce);
-        builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         let num_limbs = <E::BaseField as NumLimbs>::Limbs::USIZE;
         let num_words_field_element = num_limbs / 4;
@@ -380,7 +350,14 @@ where
             FieldOperation::Sub,
             local.is_real,
         );
+        // Range check the `neg_y.result` to be canonical.
+        let modulus_limbs = E::BaseField::to_limbs_field_vec(&E::BaseField::modulus());
+        let modulus_limbs =
+            limbs_from_vec::<AB::Expr, <E::BaseField as NumLimbs>::Limbs, AB::F>(modulus_limbs);
+        local.neg_y_range_check.eval(builder, &local.neg_y.result, &modulus_limbs, local.is_real);
 
+        // Constrain that `y` is a square root. Note that `y.multiplication.result` is constrained to be canonical here.
+        // Since `y_limbs` is constrained to be either `y.multiplication.result` or `neg_y.result`, `y_limbs` will be canonical.
         local.y.eval(builder, &local.x_3_plus_b_plus_ax.result, local.y.lsb, local.is_real);
 
         let y_limbs: Limbs<AB::Var, <E::BaseField as NumLimbs>::Limbs> =
@@ -416,19 +393,6 @@ where
                         ..weierstrass_cols
                             + size_of::<LexicographicChoiceCols<u8, E::BaseField>>()]
                     .borrow();
-
-                // Range check the neg_y value since we are now using a lexicographic comparison.
-                let modulus_limbs = E::BaseField::to_limbs_field_vec(&E::BaseField::modulus());
-                let modulus_limbs =
-                    limbs_from_vec::<AB::Expr, <E::BaseField as NumLimbs>::Limbs, AB::F>(
-                        modulus_limbs,
-                    );
-                choice_cols.neg_y_range_check.eval(
-                    builder,
-                    &local.neg_y.result,
-                    &modulus_limbs,
-                    local.is_real,
-                );
 
                 // Assert that the flags are booleans.
                 builder.assert_bool(choice_cols.is_y_eq_sqrt_y_result);
@@ -528,7 +492,6 @@ where
         builder.receive_syscall(
             local.shard,
             local.clk,
-            local.nonce,
             syscall_id,
             local.ptr,
             local.sign_bit,
@@ -540,7 +503,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{io::SP1Stdin, utils};
+    use crate::{
+        io::SP1Stdin,
+        utils::{self, run_test},
+    };
     use amcl::{
         bls381::bls381::{basic::key_pair_generate_g2, utils::deserialize_g1},
         rand::RAND,
@@ -552,8 +518,6 @@ mod tests {
     use test_artifacts::{
         BLS12381_DECOMPRESS_ELF, SECP256K1_DECOMPRESS_ELF, SECP256R1_DECOMPRESS_ELF,
     };
-
-    use crate::utils::run_test_io;
 
     #[test]
     fn test_weierstrass_bls_decompress() {
@@ -570,11 +534,9 @@ mod tests {
             let (_, compressed) = key_pair_generate_g2(&mut rand);
 
             let stdin = SP1Stdin::from(&compressed);
-            let mut public_values = run_test_io::<CpuProver<_, _>>(
-                Program::from(BLS12381_DECOMPRESS_ELF).unwrap(),
-                stdin,
-            )
-            .unwrap();
+            let mut public_values =
+                run_test::<CpuProver<_, _>>(Program::from(BLS12381_DECOMPRESS_ELF).unwrap(), stdin)
+                    .unwrap();
 
             let mut result = [0; 96];
             public_values.read_slice(&mut result);
@@ -604,7 +566,7 @@ mod tests {
 
             let inputs = SP1Stdin::from(&compressed);
 
-            let mut public_values = run_test_io::<CpuProver<_, _>>(
+            let mut public_values = run_test::<CpuProver<_, _>>(
                 Program::from(SECP256K1_DECOMPRESS_ELF).unwrap(),
                 inputs,
             )
@@ -633,7 +595,7 @@ mod tests {
 
             let inputs = SP1Stdin::from(compressed);
 
-            let mut public_values = run_test_io::<CpuProver<_, _>>(
+            let mut public_values = run_test::<CpuProver<_, _>>(
                 Program::from(SECP256R1_DECOMPRESS_ELF).unwrap(),
                 inputs,
             )

@@ -7,22 +7,43 @@ pub mod utils;
 pub mod weierstrass;
 
 pub mod curve25519_dalek {
-    pub use curve25519_dalek::edwards::CompressedEdwardsY;
+    /// In "Edwards y" / "Ed25519" format, the curve point \\((x,y)\\) is
+    /// determined by the \\(y\\)-coordinate and the sign of \\(x\\).
+    ///
+    /// The first 255 bits of a `CompressedEdwardsY` represent the
+    /// \\(y\\)-coordinate.  The high bit of the 32nd byte gives the sign of \\(x\\).
+    ///
+    /// Note: This is taken from the `curve25519-dalek` crate.
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub struct CompressedEdwardsY(pub [u8; 32]);
+
+    impl CompressedEdwardsY {
+        /// View this `CompressedEdwardsY` as a byte array.
+        pub fn as_bytes(&self) -> &[u8; 32] {
+            &self.0
+        }
+
+        /// Consume this `CompressedEdwardsY` and return the underlying byte array.
+        pub fn to_bytes(&self) -> [u8; 32] {
+            self.0
+        }
+
+        /// Construct a `CompressedEdwardsY` from a slice of bytes.
+        ///
+        /// # Errors
+        ///
+        /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
+        /// a length of 32.
+        pub fn from_slice(
+            bytes: &[u8],
+        ) -> Result<CompressedEdwardsY, core::array::TryFromSliceError> {
+            bytes.try_into().map(CompressedEdwardsY)
+        }
+    }
 }
 
-pub mod k256 {
-    pub use k256::{
-        ecdsa::{RecoveryId, Signature, VerifyingKey},
-        elliptic_curve::ops::Invert,
-    };
-}
-
-pub mod p256 {
-    pub use p256::{
-        ecdsa::{Signature, VerifyingKey},
-        elliptic_curve::ops::Invert,
-    };
-}
+pub use k256;
+pub use p256;
 
 use params::{FieldParameters, NumWords};
 use sp1_primitives::consts::WORD_SIZE;
@@ -32,7 +53,7 @@ use std::{
 };
 use typenum::Unsigned;
 
-use num::BigUint;
+pub use num::{BigUint, Integer, One, Zero};
 use serde::{de::DeserializeOwned, Serialize};
 
 pub const NUM_WORDS_FIELD_ELEMENT: usize = 8;

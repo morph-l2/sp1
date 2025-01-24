@@ -157,6 +157,3 @@ pub const BN254_FP2_SUB: u32 = 0x00_01_01_2A;
 
 /// Executes the `BN254_FP2_MUL` precompile.
 pub const BN254_FP2_MUL: u32 = 0x00_01_01_2B;
-
-/// Executes the `BN254_MULADD` precompile.
-pub const BN254_MULADD: u32 = 0x00_01_01_1F;

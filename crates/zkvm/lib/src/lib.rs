@@ -109,15 +109,6 @@ extern "C" {
         modulus: *const [u32; 8],
     );
 
-    /// Computes big integer operation.
-    pub fn sys_bn254_muladd(
-        result: *mut [u32; 8],
-        op: u32,
-        x: *const [u32; 8],
-        y: *const [u32; 8],
-        z: *const [u32; 8],
-    );
-
     /// Executes a BLS12-381 field addition on the given inputs.
     pub fn syscall_bls12381_fp_addmod(p: *mut u32, q: *const u32);
 
@@ -154,4 +145,13 @@ extern "C" {
     /// Executes a BN254 Fp2 multiplication on the given inputs.
     pub fn syscall_bn254_fp2_mulmod(p: *mut u32, q: *const u32);
 
+    /// Reads a buffer from the input stream.
+    pub fn read_vec_raw() -> ReadVecResult;
+}
+
+#[repr(C)]
+pub struct ReadVecResult {
+    pub ptr: *mut u8,
+    pub len: usize,
+    pub capacity: usize,
 }

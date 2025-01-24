@@ -2,16 +2,19 @@ pub mod concurrency;
 mod logger;
 mod prove;
 mod span;
-mod tracer;
+mod test;
+pub mod uni_stark;
 
 pub use logger::*;
 use p3_field::Field;
 pub use prove::*;
 use sp1_curves::params::Limbs;
 pub use span::*;
-pub use tracer::*;
+pub use test::*;
+pub use uni_stark::*;
 
 use crate::memory::MemoryCols;
+
 use generic_array::ArrayLength;
 use p3_maybe_rayon::prelude::{ParallelBridge, ParallelIterator};
 
@@ -171,7 +174,7 @@ where
     assert!(vec.len() % num_elements_per_event == 0);
     let len = vec.len() / num_elements_per_event;
     let cpus = num_cpus::get();
-    let ceil_div = (len + cpus - 1) / cpus;
+    let ceil_div = len.div_ceil(cpus);
     let chunk_size = std::cmp::max(ceil_div, cpus);
 
     vec.chunks_mut(chunk_size * num_elements_per_event).enumerate().par_bridge().for_each(

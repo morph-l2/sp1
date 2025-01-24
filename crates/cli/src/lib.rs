@@ -6,6 +6,12 @@ use std::process::{Command, Stdio};
 
 pub const RUSTUP_TOOLCHAIN_NAME: &str = "succinct";
 
+/// The latest version (github tag) of the toolchain that is supported by our build system.
+///
+/// This tag has support for older x86 libc versions (like the one found in Ubuntu 20.04).
+/// This tag has support for the recent Macos and ARM targets.
+pub const LATEST_SUPPORTED_TOOLCHAIN_VERSION_TAG: &str = "succinct-1.82.0";
+
 pub const SP1_VERSION_MESSAGE: &str =
     concat!("sp1", " (", env!("VERGEN_GIT_SHA"), " ", env!("VERGEN_BUILD_TIMESTAMP"), ")");
 
@@ -60,19 +66,33 @@ pub fn get_target() -> String {
 pub async fn get_toolchain_download_url(client: &Client, target: String) -> String {
     // Get latest tag from https://api.github.com/repos/succinctlabs/rust/releases/latest
     // and use it to construct the download URL.
-    let json = client
-        .get("https://api.github.com/repos/succinctlabs/rust/releases/latest")
+    let all_releases = client
+        .get("https://api.github.com/repos/succinctlabs/rust/releases")
         .send()
         .await
         .unwrap()
         .json::<serde_json::Value>()
         .await
         .unwrap();
-    let tag = json["tag_name"].as_str().expect("Failed to download Succinct toolchain. Likely caused by GitHub rate limiting. Please try again using the --token flag. Docs: https://docs.succinct.xyz/getting-started/install.html#troubleshooting");
+
+    // Check if the release exists.
+    let _ = all_releases
+        .as_array()
+        .expect("Failed to fetch releases list")
+        .iter()
+        .find(|release| {
+            release["tag_name"].as_str().unwrap() == LATEST_SUPPORTED_TOOLCHAIN_VERSION_TAG
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "No release found for the expected tag: {}",
+                LATEST_SUPPORTED_TOOLCHAIN_VERSION_TAG
+            );
+        });
 
     let url = format!(
         "https://github.com/succinctlabs/rust/releases/download/{}/rust-toolchain-{}.tar.gz",
-        tag, target
+        LATEST_SUPPORTED_TOOLCHAIN_VERSION_TAG, target
     );
 
     url
