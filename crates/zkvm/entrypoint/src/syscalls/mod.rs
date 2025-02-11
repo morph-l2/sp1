@@ -6,6 +6,7 @@ mod fptower;
 mod halt;
 mod io;
 mod keccak_permute;
+mod memcopy;
 mod memory;
 mod secp256k1;
 mod secp256r1;
@@ -26,6 +27,7 @@ pub use fptower::*;
 pub use halt::*;
 pub use io::*;
 pub use keccak_permute::*;
+pub use memcopy::*;
 pub use memory::*;
 pub use secp256k1::*;
 pub use secp256r1::*;
@@ -157,3 +159,14 @@ pub const BN254_FP2_SUB: u32 = 0x00_01_01_2A;
 
 /// Executes the `BN254_FP2_MUL` precompile.
 pub const BN254_FP2_MUL: u32 = 0x00_01_01_2B;
+
+/// Executes the `BN254_MULADD` precompile.
+pub const BN254_MULADD: u32 = 0x00_01_01_1F;
+
+/// Executes the `MEMCPY_32` precompile
+pub const MEMCPY_32: u32 = 0x00_01_01_90;
+
+/// Executes the `MEMCPY_64` precompile
+pub const MEMCPY_64: u32 = 0x00_01_01_91;
+
+pub const BN254_SCALAR_MAC: u32 = 0x00_01_01_81;
