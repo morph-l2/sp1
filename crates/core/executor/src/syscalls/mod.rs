@@ -22,9 +22,11 @@ pub use code::*;
 pub use context::*;
 use hint::{HintLenSyscall, HintReadSyscall};
 use precompiles::{
+    bn254_scalar::Bn254ScalarMacSyscall,
     edwards::{add::EdwardsAddAssignSyscall, decompress::EdwardsDecompressSyscall},
     fptower::{Fp2AddSubSyscall, Fp2MulSyscall, FpOpSyscall},
     keccak256::permute::Keccak256PermuteSyscall,
+    memcopy::MemCopySyscall,
     sha256::{compress::Sha256CompressSyscall, extend::Sha256ExtendSyscall},
     u256x2048_mul::U256xU2048MulSyscall,
     uint256::Uint256MulSyscall,
@@ -223,6 +225,15 @@ pub fn default_syscall_map() -> HashMap<SyscallCode, Arc<dyn Syscall>> {
     syscall_map.insert(
         SyscallCode::BLS12381_DECOMPRESS,
         Arc::new(WeierstrassDecompressSyscall::<Bls12381>::new()),
+    );
+    syscall_map.insert(SyscallCode::BN254_SCALAR_MAC, Arc::new(Bn254ScalarMacSyscall));
+    syscall_map.insert(
+        SyscallCode::MEMCPY_32,
+        Arc::new(MemCopySyscall::<typenum::U8, typenum::U32>::new()),
+    );
+    syscall_map.insert(
+        SyscallCode::MEMCPY_64,
+        Arc::new(MemCopySyscall::<typenum::U16, typenum::U64>::new()),
     );
 
     syscall_map

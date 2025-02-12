@@ -154,6 +154,14 @@ pub enum SyscallCode {
 
     /// Executes the `SECP256R1_DECOMPRESS` precompile.
     SECP256R1_DECOMPRESS = 0x00_00_01_2E,
+
+    /// Execute the `BN254_SCALAR_MAC` precompile
+    BN254_SCALAR_MAC = 0x00_01_01_81,
+
+    /// Execute the `MEMCPY_32` precompile.
+    MEMCPY_32 = 0x00_01_01_90,
+    /// Execute the `MEMCPY_64` precompile.
+    MEMCPY_64 = 0x00_01_01_91,
 }
 
 impl SyscallCode {
@@ -200,6 +208,9 @@ impl SyscallCode {
             0x00_01_01_2C => SyscallCode::SECP256R1_ADD,
             0x00_00_01_2D => SyscallCode::SECP256R1_DOUBLE,
             0x00_00_01_2E => SyscallCode::SECP256R1_DECOMPRESS,
+            0x00_01_01_81 => SyscallCode::BN254_SCALAR_MAC,
+            0x00_01_01_90 => SyscallCode::MEMCPY_32,
+            0x00_01_01_91 => SyscallCode::MEMCPY_64,
             _ => panic!("invalid syscall number: {value}"),
         }
     }
