@@ -1,26 +1,24 @@
 use generic_array::{ArrayLength, GenericArray};
-use sp1_core_executor::events::ByteRecord;
-use sp1_core_executor::events::MemCopyEvent;
-use sp1_core_executor::events::PrecompileEvent;
-use sp1_core_executor::syscalls::{Syscall, SyscallCode, SyscallContext};
-use sp1_core_executor::{ExecutionRecord, Program};
+use sp1_core_executor::{
+    events::{ByteRecord, MemCopyEvent, PrecompileEvent},
+    syscalls::{Syscall, SyscallCode, SyscallContext},
+    ExecutionRecord, Program,
+};
 use sp1_curves::params::Limbs;
-use sp1_stark::air::InteractionScope;
-use sp1_stark::air::{BaseAirBuilder, MachineAir, SP1AirBuilder};
+use sp1_stark::air::{BaseAirBuilder, InteractionScope, MachineAir, SP1AirBuilder};
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 
 use p3_air::{Air, AirBuilder, BaseAir};
-use p3_field::AbstractField;
-use p3_field::{Field, PrimeField32};
+use p3_field::{AbstractField, Field, PrimeField32};
 use p3_matrix::{dense::RowMajorMatrix, Matrix};
 use sp1_derive::AlignedBorrow;
 
-use crate::air::MemoryAirBuilder;
-use crate::memory::value_as_limbs;
-use crate::memory::{MemoryReadCols, MemoryWriteCols};
-use crate::utils::pad_rows_fixed;
-use crate::utils::{limbs_from_access, limbs_from_prev_access};
+use crate::{
+    air::MemoryAirBuilder,
+    memory::{value_as_limbs, MemoryReadCols, MemoryWriteCols},
+    utils::{limbs_from_access, limbs_from_prev_access, pad_rows_fixed},
+};
 
 #[derive(Debug, Clone, AlignedBorrow)]
 #[repr(C)]
@@ -29,7 +27,6 @@ pub struct MemCopyCols<T, NumWords: ArrayLength> {
     shard: T,
     channel: T,
     clk: T,
-    nonce: T,
     src_ptr: T,
     dst_ptr: T,
     src_access: GenericArray<MemoryReadCols<T>, NumWords>,
@@ -66,7 +63,6 @@ impl<F: PrimeField32, NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength
     MachineAir<F> for MemCopyChip<NumWords, NumBytes>
 {
     type Record = ExecutionRecord;
-
     type Program = Program;
 
     fn name(&self) -> String {
@@ -110,10 +106,6 @@ impl<F: PrimeField32, NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength
             cols.src_ptr = F::from_canonical_u32(event.src_ptr);
             cols.dst_ptr = F::from_canonical_u32(event.dst_ptr);
 
-            //cols.nonce = F::from_canonical_u32(
-            //    output.nonce_lookup.get(&event.lookup_id).copied().expect("should not be none"),
-            //);
-
             for i in 0..NumWords::USIZE {
                 cols.src_access[i].populate(event.read_records[i], &mut new_byte_lookup_events);
             }
@@ -131,15 +123,7 @@ impl<F: PrimeField32, NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength
             input.fixed_log2_rows::<F, _>(self),
         );
 
-        let mut trace =
-            RowMajorMatrix::new(rows.into_iter().flatten().collect::<Vec<_>>(), Self::NUM_COLS);
-        // Write the nonces to the trace.
-        for i in 0..trace.height() {
-            let cols: &mut MemCopyCols<F, NumWords> =
-                trace.values[i * Self::NUM_COLS..(i + 1) * Self::NUM_COLS].borrow_mut();
-            cols.nonce = F::from_canonical_usize(i);
-        }
-        trace
+        RowMajorMatrix::new(rows.into_iter().flatten().collect::<Vec<_>>(), Self::NUM_COLS)
     }
 
     fn included(&self, shard: &Self::Record) -> bool {
@@ -166,12 +150,6 @@ impl<AB: SP1AirBuilder, NumWords: ArrayLength + Sync, NumBytes: ArrayLength + Sy
         let main = builder.main();
         let local = main.row_slice(0);
         let local: &MemCopyCols<AB::Var, NumWords> = (*local).borrow();
-        let next = main.row_slice(1);
-        let next: &MemCopyCols<AB::Var, NumWords> = (*next).borrow();
-
-        // Check that nonce is incremented.
-        builder.when_first_row().assert_zero(local.nonce);
-        builder.when_transition().assert_eq(local.nonce + AB::Expr::one(), next.nonce);
 
         let src: Limbs<<AB as AirBuilder>::Var, NumBytes> =
             limbs_from_prev_access(&local.src_access);
@@ -199,32 +177,11 @@ impl<AB: SP1AirBuilder, NumWords: ArrayLength + Sync, NumBytes: ArrayLength + Sy
         builder.receive_syscall(
             local.shard,
             local.clk,
-            local.nonce,
             AB::F::from_canonical_u32(Self::syscall_id()),
             local.src_ptr,
             local.dst_ptr,
             local.is_real,
             InteractionScope::Local,
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use sp1_core_executor::Program;
-    use sp1_stark::CpuProver;
-    use test_artifacts::MEMCPY_ELF;
-
-    use crate::{
-        io::SP1Stdin,
-        utils::{self, run_test_io},
-    };
-
-    #[test]
-    fn test_memcpy() {
-        utils::setup_logger();
-        let program = Program::from(MEMCPY_ELF).unwrap();
-        run_test_io::<CpuProver<_, _>>(program, SP1Stdin::new()).unwrap();
     }
 }
