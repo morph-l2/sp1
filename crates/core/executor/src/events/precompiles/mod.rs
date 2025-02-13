@@ -75,6 +75,9 @@ pub enum PrecompileEvent {
     Uint256Mul(Uint256MulEvent),
     /// U256XU2048 mul precompile event.
     U256xU2048Mul(U256xU2048MulEvent),
+    MemCopy32(MemCopyEvent),
+    MemCopy64(MemCopyEvent),
+    Bn254ScalarMac(Bn254FieldArithEvent),
 }
 
 /// Trait to retrieve all the local memory events from a vec of precompile events.
@@ -132,6 +135,13 @@ impl PrecompileLocalMemory for Vec<(SyscallEvent, PrecompileEvent)> {
                 PrecompileEvent::Bls12381Fp2AddSub(e) | PrecompileEvent::Bn254Fp2AddSub(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
+                PrecompileEvent::Bn254ScalarMac(e) => {
+                    iterators.push(e.local_mem_access.iter());
+                }
+                PrecompileEvent::MemCopy32(e) | PrecompileEvent::MemCopy64(e) => {
+                    iterators.push(e.local_mem_access.iter());
+                }
+
                 PrecompileEvent::Bls12381Fp2Mul(e) | PrecompileEvent::Bn254Fp2Mul(e) => {
                     iterators.push(e.local_mem_access.iter());
                 }
