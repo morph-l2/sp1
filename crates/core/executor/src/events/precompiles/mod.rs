@@ -8,7 +8,6 @@ mod sha256_extend;
 mod u256x2048_mul;
 mod uint256;
 
-use super::{MemoryLocalEvent, SyscallEvent};
 use crate::syscalls::SyscallCode;
 use crate::{deserialize_hashmap_as_vec, serialize_hashmap_as_vec};
 pub use bn254_scalar::{
