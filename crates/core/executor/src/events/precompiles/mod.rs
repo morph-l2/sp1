@@ -1,3 +1,4 @@
+mod bn254_scalar;
 mod ec;
 mod edwards;
 mod fptower;
@@ -10,6 +11,9 @@ mod uint256;
 use super::{MemoryLocalEvent, SyscallEvent};
 use crate::syscalls::SyscallCode;
 use crate::{deserialize_hashmap_as_vec, serialize_hashmap_as_vec};
+pub use bn254_scalar::{
+    create_bn254_scalar_arith_event, Bn254FieldArithEvent, Bn254FieldOperation, NUM_WORDS_PER_FE,
+};
 pub use ec::*;
 pub use edwards::*;
 pub use fptower::*;
@@ -21,6 +25,8 @@ pub use sha256_extend::*;
 use strum::{EnumIter, IntoEnumIterator};
 pub use u256x2048_mul::*;
 pub use uint256::*;
+
+use super::{MemCopyEvent, MemoryLocalEvent, SyscallEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize, EnumIter)]
 /// Precompile event.  There should be one variant for every precompile syscall.
