@@ -36,7 +36,6 @@ impl<NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength + Send + Sync> S
         let write = rt.mw_slice(dst, &read_bytes);
 
         let event = MemCopyEvent {
-            lookup_id: rt.syscall_lookup_id,
             shard: rt.current_shard(),
             clk: start_clk,
             src_ptr: src,
@@ -50,13 +49,7 @@ impl<NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength + Send + Sync> S
             16 => PrecompileEvent::MemCopy64(event),
             _ => panic!("invalid uszie {}", NumWords::USIZE),
         };
-        let syscall_event = rt.rt.syscall_event(
-            start_clk,
-            syscall_code.syscall_id(),
-            src,
-            dst,
-            rt.syscall_lookup_id,
-        );
+        let syscall_event = rt.rt.syscall_event(start_clk, syscall_code.syscall_id(), src, dst);
 
         rt.record_mut().add_precompile_event(syscall_code, syscall_event, precompile_event);
 

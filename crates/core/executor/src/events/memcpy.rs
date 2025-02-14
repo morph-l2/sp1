@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct MemCopyEvent {
-    pub lookup_id: LookupId,
     pub shard: u32,
     pub clk: u32,
     pub src_ptr: u32,

@@ -8,7 +8,7 @@ use typenum::Unsigned;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    events::{LookupId, MemoryLocalEvent, MemoryReadRecord, MemoryWriteRecord},
+    events::{MemoryLocalEvent, MemoryReadRecord, MemoryWriteRecord},
     syscalls::SyscallContext,
 };
 
@@ -38,7 +38,7 @@ impl Bn254FieldOperation {
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Bn254FieldArithEvent {
     /// The lookup identifier.
-    pub lookup_id: LookupId,
+
     /// The shard number.
     pub shard: u32,
     /// The clock cycle.
@@ -123,7 +123,6 @@ pub fn create_bn254_scalar_arith_event(
 
     let shard = rt.current_shard();
     Bn254FieldArithEvent {
-        lookup_id: rt.syscall_lookup_id,
         shard,
         clk: start_clk,
         op,
