@@ -1,4 +1,4 @@
-use super::{LookupId, MemoryLocalEvent, MemoryReadRecord, MemoryWriteRecord};
+use super::{MemoryLocalEvent, MemoryReadRecord, MemoryWriteRecord};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
