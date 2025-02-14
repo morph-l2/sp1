@@ -302,8 +302,16 @@ impl<F: PrimeField32> RiscvAir<F> {
         chips.push(uint256_mul);
 
         let bn254_scalar_mac = Chip::new(RiscvAir::Bn254ScalarMac(Bn254ScalarMacChip::new()));
-        costs.insert(RiscvAirDiscriminants::Bn254ScalarMac, bn254_scalar_mac.cost());
+        costs.insert(bn254_scalar_mac.name(), bn254_scalar_mac.cost());
         chips.push(bn254_scalar_mac);
+
+        let mem_copy_32 = Chip::new(RiscvAir::MemCopy32(MemCopy32Chip::new()));
+        costs.insert(mem_copy_32.name(), mem_copy_32.cost());
+        chips.push(mem_copy_32);
+
+        let mem_copy_64 = Chip::new(RiscvAir::MemCopy64(MemCopy64Chip::new()));
+        costs.insert(mem_copy_64.name(), mem_copy_64.cost());
+        chips.push(mem_copy_64);
 
         let u256x2048_mul = Chip::new(RiscvAir::U256x2048Mul(U256x2048MulChip::default()));
         costs.insert(u256x2048_mul.name(), u256x2048_mul.cost());
@@ -337,12 +345,12 @@ impl<F: PrimeField32> RiscvAir<F> {
         costs.insert(bn254_fp2_mul.name(), bn254_fp2_mul.cost());
         chips.push(bn254_fp2_mul);
 
-        let mem_copy_32 = Chip::new(RiscvAir::MemCopy32(MemCopy32Chip::new()));
-        costs.insert(RiscvAirDiscriminants::MemCopy32, mem_copy_32.cost());
-        chips.push(mem_copy_32);
-        let mem_copy_64 = Chip::new(RiscvAir::MemCopy64(MemCopy64Chip::new()));
-        costs.insert(RiscvAirDiscriminants::MemCopy64, mem_copy_64.cost());
-        chips.push(mem_copy_64);
+        // let mem_copy_32 = Chip::new(RiscvAir::MemCopy32(MemCopy32Chip::new()));
+        // costs.insert(RiscvAirDiscriminants::MemCopy32, mem_copy_32.cost());
+        // chips.push(mem_copy_32);
+        // let mem_copy_64 = Chip::new(RiscvAir::MemCopy64(MemCopy64Chip::new()));
+        // costs.insert(RiscvAirDiscriminants::MemCopy64, mem_copy_64.cost());
+        // chips.push(mem_copy_64);
 
         let bls12381_decompress =
             Chip::new(RiscvAir::Bls12381Decompress(WeierstrassDecompressChip::<
