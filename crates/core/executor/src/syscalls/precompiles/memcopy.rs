@@ -49,7 +49,8 @@ impl<NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength + Send + Sync> S
             16 => PrecompileEvent::MemCopy64(event),
             _ => panic!("invalid uszie {}", NumWords::USIZE),
         };
-        let syscall_event = rt.rt.syscall_event(start_clk, syscall_code.syscall_id(), src, dst);
+        let syscall_event =
+            rt.rt.syscall_event(start_clk, None, None, syscall_code, src, dst, rt.next_pc);
 
         rt.record_mut().add_precompile_event(syscall_code, syscall_event, precompile_event);
 
