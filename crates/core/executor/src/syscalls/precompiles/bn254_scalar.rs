@@ -16,7 +16,7 @@ impl Syscall for Bn254ScalarMacSyscall {
         let start_clk = rt.clk;
         let event = create_bn254_scalar_arith_event(rt, arg1, arg2, Bn254FieldOperation::MulAdd);
         let syscall_event =
-            rt.rt.syscall_event(start_clk, syscall_code.syscall_id(), arg1, arg2, event.lookup_id);
+            rt.rt.syscall_event(start_clk, None, None, syscall_code, arg1, arg2, rt.next_pc);
 
         rt.record_mut().add_precompile_event(
             syscall_code,
