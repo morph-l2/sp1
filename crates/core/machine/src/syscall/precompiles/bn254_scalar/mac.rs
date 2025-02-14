@@ -53,6 +53,28 @@ impl Bn254ScalarMacChip {
     }
 }
 
+impl<F: Field> BaseAir<F> for Bn254ScalarMacChip {
+    fn width(&self) -> usize {
+        NUM_COLS
+    }
+
+    fn preprocessed_trace(&self) -> Option<&RowMajorMatrix<F>> {
+        None
+    }
+
+    fn execute(&self, inputs: &[F], outputs: &mut [F]) {
+        outputs.copy_from_slice(inputs);
+    }
+
+    fn degree(&self) -> usize {
+        4
+    }
+
+    fn minimal_cyclic_domain_size(&self) -> usize {
+        64
+    }
+}
+
 impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
     type Record = ExecutionRecord;
     type Program = Program;
