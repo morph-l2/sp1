@@ -58,20 +58,8 @@ impl<F: Field> BaseAir<F> for Bn254ScalarMacChip {
         NUM_COLS
     }
 
-    fn preprocessed_trace(&self) -> Option<&RowMajorMatrix<F>> {
+    fn preprocessed_trace(&self) -> Option<RowMajorMatrix<F>> {
         None
-    }
-
-    fn execute(&self, inputs: &[F], outputs: &mut [F]) {
-        outputs.copy_from_slice(inputs);
-    }
-
-    fn degree(&self) -> usize {
-        4
-    }
-
-    fn minimal_cyclic_domain_size(&self) -> usize {
-        64
     }
 }
 
