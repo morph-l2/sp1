@@ -66,7 +66,7 @@ impl<F: PrimeField32, NumWords: ArrayLength + Send + Sync, NumBytes: ArrayLength
     type Program = Program;
 
     fn name(&self) -> String {
-        format!("MemCopy{}Chip", NumWords::USIZE)
+        format!("MemCopy{}Chip", NumBytes::USIZE)
     }
 
     fn generate_trace(&self, input: &Self::Record, output: &mut Self::Record) -> RowMajorMatrix<F> {
