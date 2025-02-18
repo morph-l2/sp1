@@ -126,6 +126,12 @@ pub enum RiscvAirId {
     Global = 43,
     /// The byte chip.
     Byte = 44,
+    /// The BN254 scalar mac chip.
+    Bn254ScalarMac = 45,
+    /// The memorycopy32 chip.
+    MemCopy32 = 46,
+    /// The memorycopy64 chip.
+    MemCopy64 = 47,
 }
 
 impl RiscvAirId {
@@ -200,6 +206,9 @@ impl RiscvAirId {
             Self::MemoryLocal => "MemoryLocal",
             Self::Global => "Global",
             Self::Byte => "Byte",
+            Self::Bn254ScalarMac => "Bn254ScalarMac",
+            Self::MemCopy32 => "MemCopy32",
+            Self::MemCopy64 => "MemCopy64",
         }
     }
 }
