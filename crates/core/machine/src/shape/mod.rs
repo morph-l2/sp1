@@ -200,7 +200,10 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
                 air.precompile_heights(record)
             {
                 if air.name() == String::from_str("Bn254ScalarMac").unwrap() {
-                    println!("height:{:?} allowed_log2_heights:{:?}", height, allowed_log2_heights);
+                    println!(
+                        "height:{:?}, allowed_log2_heights:{:?}, memory_events_per_row:{:?}",
+                        height, allowed_log2_heights, memory_events_per_row
+                    );
                 }
                 for allowed_log2_height in allowed_log2_heights {
                     let allowed_height = 1 << allowed_log2_height;
@@ -258,8 +261,15 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
         (1..=4 * air.rows_per_event())
             .rev()
             .map(|rows_per_event| {
-                let num_local_mem_events =
+                let mut num_local_mem_events =
                     ((1 << allowed_log2_height) * memory_events_per_row).div_ceil(rows_per_event);
+                if air.name() == String::from_str("Bn254ScalarMac").unwrap() {
+                    println!(
+                        "memory_events_per_row:{:?}, num_local_mem_events:{:?}",
+                        memory_events_per_row, num_local_mem_events
+                    );
+                    num_local_mem_events = 851968;
+                }
                 [
                     (air.name(), allowed_log2_height),
                     (
