@@ -199,9 +199,15 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
             if let Some((height, num_memory_local_events, num_global_events)) =
                 air.precompile_heights(record)
             {
+                if air.name() == String::from_str("Bn254ScalarMac").unwrap() {
+                    println!("height:{:?} allowed_log2_heights:{:?}", height, allowed_log2_heights);
+                }
                 for allowed_log2_height in allowed_log2_heights {
                     let allowed_height = 1 << allowed_log2_height;
                     if height <= allowed_height {
+                        if air.name() == String::from_str("Bn254ScalarMac").unwrap() {
+                            println!("begin to find shape");
+                        }
                         for shape in self.get_precompile_shapes(
                             air,
                             *memory_events_per_row,
@@ -209,6 +215,11 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
                         ) {
                             let mem_events_height = shape[2].1;
                             let global_events_height = shape[3].1;
+
+                            if air.name() == String::from_str("Bn254ScalarMac").unwrap() {
+                                println!("mem_events_height:{:?}, num_global_events:{:?}, global_events_height:{:?}", mem_events_height, num_global_events, global_events_height);
+                            }
+
                             if num_memory_local_events.div_ceil(NUM_LOCAL_MEMORY_ENTRIES_PER_ROW)
                                 <= (1 << mem_events_height)
                                 && num_global_events <= (1 << global_events_height)
