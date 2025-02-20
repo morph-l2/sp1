@@ -268,7 +268,7 @@ impl<F: PrimeField32> CoreShapeConfig<F> {
                         "memory_events_per_row:{:?}, num_local_mem_events:{:?}",
                         memory_events_per_row, num_local_mem_events
                     );
-                    num_local_mem_events = 851968;
+                    // num_local_mem_events = 851968;
                 }
                 [
                     (air.name(), allowed_log2_height),

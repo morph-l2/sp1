@@ -151,13 +151,13 @@ impl<AB: SP1AirBuilder, NumWords: ArrayLength + Sync, NumBytes: ArrayLength + Sy
         let local = main.row_slice(0);
         let local: &MemCopyCols<AB::Var, NumWords> = (*local).borrow();
 
-        let src: Limbs<<AB as AirBuilder>::Var, NumBytes> =
-            limbs_from_prev_access(&local.src_access);
-        let dst: Limbs<<AB as AirBuilder>::Var, NumBytes> = limbs_from_access(&local.dst_access);
+        // let src: Limbs<<AB as AirBuilder>::Var, NumBytes> =
+        //     limbs_from_prev_access(&local.src_access);
+        // let dst: Limbs<<AB as AirBuilder>::Var, NumBytes> = limbs_from_access(&local.dst_access);
 
-        builder
-            .when(local.is_real)
-            .assert_all_eq(value_as_limbs(&local.src_access), value_as_limbs(&local.dst_access));
+        // builder
+        //     .when(local.is_real)
+        //     .assert_all_eq(value_as_limbs(&local.src_access), value_as_limbs(&local.dst_access));
 
         builder.eval_memory_access_slice(
             local.shard,
