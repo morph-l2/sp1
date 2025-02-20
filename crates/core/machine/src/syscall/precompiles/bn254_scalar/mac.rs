@@ -148,6 +148,12 @@ impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
     }
 }
 
+impl<F: Field> BaseAir<F> for Bn254ScalarMacChip {
+    fn width(&self) -> usize {
+        NUM_COLS
+    }
+}
+
 impl<AB> Air<AB> for Bn254ScalarMacChip
 where
     AB: SP1AirBuilder,
@@ -158,6 +164,75 @@ where
         let local: &Bn254ScalarMacCols<AB::Var> = (*local).borrow();
 
         builder.assert_bool(local.is_real);
+
+        let arg1: Limbs<<AB as AirBuilder>::Var, <Bn254ScalarField as NumLimbs>::Limbs> =
+            limbs_from_prev_access(&local.arg1_access);
+        let arg2: Limbs<<AB as AirBuilder>::Var, U8> = limbs_from_prev_access(&local.arg2_access);
+        let a: Limbs<<AB as AirBuilder>::Var, <Bn254ScalarField as NumLimbs>::Limbs> =
+            limbs_from_prev_access(&local.a_access);
+        let b: Limbs<<AB as AirBuilder>::Var, <Bn254ScalarField as NumLimbs>::Limbs> =
+            limbs_from_prev_access(&local.b_access);
+
+        local.mul_eval.eval(builder, &a, &b, FieldOperation::Mul, local.is_real);
+        local.add_eval.eval(
+            builder,
+            &arg1,
+            &local.mul_eval.result,
+            FieldOperation::Add,
+            local.is_real,
+        );
+
+        for i in 0..Bn254ScalarField::NB_LIMBS {
+            builder
+                .when(local.is_real)
+                .assert_eq(local.add_eval.result[i], local.arg1_access[i / 4].value()[i % 4]);
+        }
+
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into() + AB::Expr::one(),
+            local.arg1_ptr,
+            &local.arg1_access,
+            local.is_real,
+        );
+
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into(),
+            local.arg2_ptr,
+            &local.arg2_access,
+            local.is_real,
+        );
+
+        let a_ptr = arg2.0[0..4]
+            .iter()
+            .rev()
+            .cloned()
+            .map(|v| v.into())
+            .fold(AB::Expr::zero(), |acc, b| acc * AB::Expr::from_canonical_u16(0x100) + b);
+
+        let b_ptr = arg2.0[4..8]
+            .iter()
+            .rev()
+            .cloned()
+            .map(|v| v.into())
+            .fold(AB::Expr::zero(), |acc, b| acc * AB::Expr::from_canonical_u16(0x100) + b);
+
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into(),
+            a_ptr,
+            &local.a_access,
+            local.is_real,
+        );
+
+        builder.eval_memory_access_slice(
+            local.shard,
+            local.clk.into(),
+            b_ptr,
+            &local.b_access,
+            local.is_real,
+        );
 
         let syscall_id = AB::F::from_canonical_u32(SyscallCode::BN254_SCALAR_MAC.syscall_id());
         builder.receive_syscall(
