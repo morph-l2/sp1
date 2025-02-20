@@ -148,12 +148,6 @@ impl<F: PrimeField32> MachineAir<F> for Bn254ScalarMacChip {
     }
 }
 
-impl<F: Field> BaseAir<F> for Bn254ScalarMacChip {
-    fn width(&self) -> usize {
-        NUM_COLS
-    }
-}
-
 impl<AB> Air<AB> for Bn254ScalarMacChip
 where
     AB: SP1AirBuilder,
